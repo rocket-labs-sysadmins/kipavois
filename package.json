@@ -1,0 +1,36 @@
+{
+  "name": "kibana-auth-rewrite",
+  "version": "0.0.1",
+  "description": "HTTP proxy that rewrite queries made by Kibana 4 to Elasticsearch to filter documents owned by the logged user",
+  "scripts": {
+    "start": "node bin/es-kibana-auth-proxy",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "es-kibana-auth-proxy": "./bin/es-kibana-auth-proxy"
+  },
+  "main": "kibana-auth-rewrite.js",
+  "author": "Tristan Carel <tristan@cogniteev.com>",
+  "license": "Apache-2.0",
+  "keywords": [
+    "elasticsearch",
+    "kibana",
+    "security",
+    "proxy"
+  ],
+
+  "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cogniteev/es-kibana-auth-proxy"
+  },
+  "bugs": {
+    "url": "https://github.com/cogniteev/es-kibana-auth-proxy/issues"
+  },
+  "dependencies": {
+    "body-parser": "^1.13.3",
+    "commander": "^2.8.1",
+    "connect": "^3.4.0",
+    "http-proxy": "^1.1.11"
+  }
+}

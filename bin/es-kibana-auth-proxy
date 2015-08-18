@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+'use strict';
+
+process.title = 'es-kibana-auth-proxy';
+
+var program = require('commander');
+var kibanaProxy = require('../es-kibana-auth-proxy');
+
+program
+  .option('-u, --kibana-user-header <header>', 'HTTP header used to get the Kibana user (defaults to `x-kibana-user`)', 'x-kibana-user')
+  .option('-s, --server <host:port>', 'Elasticsearch endpoint (default to `elasticsearch:9200`)', 'elasticsearch:9200')
+  .option('-p, --port <port>', 'Listening port (default to `8000`)', parseInt)
+  .parse(process.argv);
+
+return kibanaProxy({
+  kibanaUserHeader: program.kibanaUserHeader,
+  elasticsearchEndpoint: program.server
+}).start_proxy();
