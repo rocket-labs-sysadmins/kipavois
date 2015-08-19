@@ -78,13 +78,31 @@ module.exports = function(options) {
           })
         },
         app = connect()
-            // only rewrite body of the 'POST /_msearch' operation
             .use(function(req, res, next) {
-              logger.info("proxy " + req.method + " " + req.url)
-              if (req.method == 'POST' &&
-                  req.url.startsWith('/_msearch') &&
-                  kibanaUserHeader in req.headers) {
-                next();
+              logger.info(req.method + " " + req.url)
+              if (kibanaUserHeader in req.headers) {
+                if (req.method == 'POST') {
+                  if (req.url.startsWith('/_msearch')) {
+                    // launch body rewrite
+                    next();
+                  } else if (req.url.startsWith('/.kibana/config') && req.url.endsWith('_update')) {
+                    // non admin user is not allowed to modify the .kibana index
+                    res.statusCode = 403
+                    res.end()
+                  } else if (req.url.startsWith('/.kibana/dashboard/') && req.url.endsWith('op_type=create')) {
+                    // Cannot create or update a dashboard
+                    res.statusCode = 403
+                    res.end()
+                  } else {
+                    proxy.web(req, res);
+                  }
+                } else if (req.method == 'DELETE') {
+                  // Objects cannot be deleted
+                  res.statusCode = 403
+                  res.end()
+                } else {
+                  proxy.web(req, res);
+                }
               } else {
                 proxy.web(req, res);
               }
