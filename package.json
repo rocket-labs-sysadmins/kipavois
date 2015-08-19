@@ -33,6 +33,7 @@
     "connect": "^3.4.0",
     "http-proxy": "^1.1.11",
     "type-of-is": "~3.4.0",
-    "prototypes": "~0.4.1"
+    "prototypes": "~0.4.1",
+    "winston": "~1.0.1"
   }
 }

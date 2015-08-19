@@ -1,9 +1,10 @@
 var http = require('http'),
-    connect = require('connect'),
     bodyParser = require('body-parser'),
+    connect = require('connect'),
+    fs = require('fs'),
     httpProxy = require('http-proxy'),
-    Type = require('type-of-is');
-    fs = require('fs');
+    Type = require('type-of-is'),
+    winston = require('winston');
 require('prototypes');
 
 module.exports = function(options) {
@@ -14,17 +15,31 @@ module.exports = function(options) {
         proxy = httpProxy.createProxyServer({
             target: 'http://' + elasticsearchEndpoint
         }),
-        parse_msearch = function(raw) {
+        logger = new (winston.Logger)({
+          transports: [
+            new (winston.transports.Console)()
+          ]
+        }),
+        parse_msearch = function(raw, onError) {
           query = null;
           queries = [];
           lines = raw.split('\n');
           for (var i = 0 ; i < lines.length ; i++) {
             if (query == null) {
-              query = JSON.parse(lines[i]);
+              try {
+                Squery = JSON.parse(lines[i]);
+              } catch (e) {
+                onError(e)
+              }
             } else {
+              try {
+                body = JSON.parse(lines[i])
+              } catch (e) {
+                onError(e)
+              }
               queries.push({
                 'query': query,
-                'body': JSON.parse(lines[i])
+                'body': body
               });
               query = null;
             }
@@ -83,12 +98,21 @@ module.exports = function(options) {
               if (!(Type.is(req.body, String))) {
                 req.body = ""
               }
-              queries = parse_msearch(req.body)
+              queries = parse_msearch(req.body, function(message) {
+                logger.error(message, {
+                  method: req.method,
+                  url: req.url,
+                  body: req.body
+                })
+              })
               newBody = ""
               queries.forEach(function(q) {
                 add_term_filter_msearch(q, kibanaUserField, req.headers[kibanaUserHeader], function(message) {
-                  console.error(message)
-                  //fs.appendFile("/var/log/pavois.log", "Error: " + message + ": " + req.method + " " + req.url + '\n' + req.body + '\n==================================================\n', function(err, data){})
+                  logger.error(message, {
+                    method: req.method,
+                    url: req.url,
+                    body: req.body
+                  })
                 })
                 newBody += JSON.stringify(q.query)
                 newBody += '\n'
