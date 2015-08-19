@@ -8,11 +8,13 @@ var kibanaProxy = require('../es-kibana-auth-proxy');
 
 program
   .option('-u, --kibana-user-header <header>', 'HTTP header used to get the Kibana user (defaults to `x-kibana-user`)', 'x-kibana-user')
+  .option('-f, --filtered-field <field>', 'Name of the Elasticsearch field to filter on (defaults to `user`).', 'user')
   .option('-s, --server <host:port>', 'Elasticsearch endpoint (default to `elasticsearch:9200`)', 'elasticsearch:9200')
   .option('-p, --port <port>', 'Listening port (default to `8000`)', parseInt)
   .parse(process.argv);
 
 return kibanaProxy({
   kibanaUserHeader: program.kibanaUserHeader,
-  elasticsearchEndpoint: program.server
+  elasticsearchEndpoint: program.server,
+  kibanaUserField: program.filteredField
 }).start_proxy();

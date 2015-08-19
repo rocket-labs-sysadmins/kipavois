@@ -31,6 +31,8 @@
     "body-parser": "^1.13.3",
     "commander": "^2.8.1",
     "connect": "^3.4.0",
-    "http-proxy": "^1.1.11"
+    "http-proxy": "^1.1.11",
+    "type-of-is": "~3.4.0",
+    "prototypes": "~0.4.1"
   }
 }
