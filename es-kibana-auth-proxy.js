@@ -25,17 +25,20 @@ module.exports = function(options) {
           queries = [];
           lines = raw.split('\n');
           for (var i = 0 ; i < lines.length ; i++) {
+            if (lines[i].length === 0) {
+              continue;
+            }
             if (query == null) {
               try {
-                Squery = JSON.parse(lines[i]);
+                query = JSON.parse(lines[i]);
               } catch (e) {
-                onError(e)
+                onError(e, "parsing query indices: " + escape(lines[i]))
               }
             } else {
               try {
                 body = JSON.parse(lines[i])
               } catch (e) {
-                onError(e)
+                onError(e, "parsing query" + escape(lines[i]))
               }
               queries.push({
                 'query': query,
@@ -77,6 +80,7 @@ module.exports = function(options) {
         app = connect()
             // only rewrite body of the 'POST /_msearch' operation
             .use(function(req, res, next) {
+              logger.info("proxy " + req.method + " " + req.url)
               if (req.method == 'POST' &&
                   req.url.startsWith('/_msearch') &&
                   kibanaUserHeader in req.headers) {
@@ -98,11 +102,12 @@ module.exports = function(options) {
               if (!(Type.is(req.body, String))) {
                 req.body = ""
               }
-              queries = parse_msearch(req.body, function(message) {
+              queries = parse_msearch(req.body, function(message, context) {
                 logger.error(message, {
                   method: req.method,
                   url: req.url,
-                  body: req.body
+                  body: req.body,
+                  context: context
                 })
               })
               newBody = ""
@@ -119,6 +124,7 @@ module.exports = function(options) {
                 newBody += JSON.stringify(q.body)
                 newBody += '\n'
               });
+              logger.info("new body: " + newBody)
               req.headers['content-length'] = newBody.length
               next()
             })
