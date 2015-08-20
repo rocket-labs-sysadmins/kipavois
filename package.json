@@ -1,13 +1,13 @@
 {
-  "name": "kibana-auth-rewrite",
+  "name": "kipavois",
   "version": "0.0.1",
-  "description": "HTTP proxy that rewrite queries made by Kibana 4 to Elasticsearch to filter documents owned by the logged user",
+  "description": "HTTP proxy that rewrite queries made by Kibana 4 to Elasticsearch to filter documents owned by an authenticated user",
   "scripts": {
-    "start": "node bin/es-kibana-auth-proxy",
+    "start": "node bin/kipavois",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "es-kibana-auth-proxy": "./bin/es-kibana-auth-proxy"
+    "kipavois": "./bin/kipavois"
   },
   "main": "kibana-auth-rewrite.js",
   "author": "Tristan Carel <tristan@cogniteev.com>",
@@ -22,10 +22,10 @@
   "preferGlobal": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/cogniteev/es-kibana-auth-proxy"
+    "url": "https://github.com/cogniteev/kipavois"
   },
   "bugs": {
-    "url": "https://github.com/cogniteev/es-kibana-auth-proxy/issues"
+    "url": "https://github.com/cogniteev/kipavois/issues"
   },
   "dependencies": {
     "body-parser": "^1.13.3",
