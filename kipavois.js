@@ -79,7 +79,7 @@ module.exports = function(options) {
         },
         app = connect()
             .use(function(req, res, next) {
-              logger.info(req.method + " " + req.url)
+              logger.debug(req.method + " " + req.url)
               if (kibanaUserHeader in req.headers) {
                 if (req.method == 'POST') {
                   if (req.url.startsWith('/_msearch')) {
@@ -94,17 +94,29 @@ module.exports = function(options) {
                     res.statusCode = 403
                     res.end()
                   } else {
-                    proxy.web(req, res);
+                    proxy.web(req, res, function(e) {
+                      logger.error(e)
+                      res.statusCode = 500
+                      res.end();
+                    });
                   }
                 } else if (req.method == 'DELETE') {
                   // Objects cannot be deleted
                   res.statusCode = 403
                   res.end()
                 } else {
-                  proxy.web(req, res);
+                  proxy.web(req, res, function(e) {
+                    logger.error(e)
+                    res.statusCode = 500
+                    res.end();
+                  });
                 }
               } else {
-                proxy.web(req, res);
+                proxy.web(req, res, function(e) {
+                  logger.error(e)
+                  res.statusCode = 500
+                  res.end();
+                });
               }
             })
             .use(function(req, res, next) {
@@ -148,7 +160,11 @@ module.exports = function(options) {
             })
             // configure proxy pipelines and emit the new body
             .use(function(req, res) {
-              proxy.web(req, res)
+              proxy.web(req, res, function(e) {
+                logger.error(e)
+                res.statusCode = 500
+                res.end();
+              })
               req.emit('data', newBody)
             });
     var start_proxy = function() {
