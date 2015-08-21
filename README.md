@@ -25,17 +25,36 @@ npm install -g kipavois
 kipavois --help
 ```
 
+## Synopsys
+
+```
+Usage: kipavois [options]
+
+Options:
+
+  -h, --help                         output usage information
+  -u, --kibana-user-header <header>  HTTP header used to get the Kibana user (defaults to `x-kibana-user`)
+  -f, --filtered-field <field>       Name of the Elasticsearch field to filter on (defaults to `user`).
+  -s, --server <host:port>           Elasticsearch endpoint (default to `elasticsearch:9200`)
+  -p, --port <port>                  Listening port (default to `8000`)
+```
 
 ## Behavior
 
-If the `x-kibana-user` HTTP header is specified, then the proxy will modify body of certains queries, and block Kibana administrative operations.
+If the `x-kibana-user` HTTP header is specified, then the proxy:
 
-### Filters
+* Modifies body of certain queries
+* Forbid Kibana administrative operations.
 
-A new filter is added to queries specified in the body of `POST /_msearch`
-operation.
+#### Filters
 
-### Blocked operations
+An additional *term* filter is added to queries specified in the body of
+`POST /_msearch` operation. It uses the field specified in the
+`--filtered-field` command line option. Term values are passed in the
+`x-kibana-user` HTTP header. The value can be a valid JSON expression
+(an array of string for instance), or a plain text value.
+
+#### Blocked operations
 
 It is not possible to:
 

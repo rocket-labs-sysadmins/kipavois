@@ -142,7 +142,12 @@ module.exports = function(options) {
               })
               newBody = ""
               queries.forEach(function(q) {
-                add_term_filter_msearch(q, kibanaUserField, req.headers[kibanaUserHeader], function(message) {
+                try {
+                  allowedTerms = JSON.parse(req.headers[kibanaUserHeader]);
+                } catch (e) {
+                  allowedTerms = req.headers[kibanaUserHeader];
+                }
+                add_term_filter_msearch(q, kibanaUserField, allowedTerms, function(message) {
                   logger.error(message, {
                     method: req.method,
                     url: req.url,
