@@ -9,9 +9,10 @@ require('prototypes');
 
 module.exports = function(options) {
     var kibanaUserHeader = options.kibanaUserHeader || 'x-kibana-user',
+        kibanaUserHeaderRegex = options.kibanaUserHeaderRegex || '([^,]+),?',
         kibanaUserField = options.kibanaUserField || 'user',
         elasticsearchEndpoint = options.elasticsearchEndpoint || 'elasticsearch:9200',
-        port = options.port || 9200,
+        listenPort = options.listenPort || 8000,
         proxy = httpProxy.createProxyServer({
             target: 'http://' + elasticsearchEndpoint
         }),
@@ -73,23 +74,25 @@ module.exports = function(options) {
           }
           var newTerm = {}
           newTerm[term] = value
-          bool_filter.must.push({
-            'term': newTerm
-          })
+          if (value.length > 0) {
+            bool_filter.must.push({
+              'terms': newTerm
+            })
+          }
         },
         app = connect()
             .use(function(req, res, next) {
               logger.debug(req.method + " " + req.url)
               if (kibanaUserHeader in req.headers) {
                 if (req.method == 'POST') {
-                  if (req.url.startsWith('/_msearch')) {
+                  if (req.url.startsWith('/elasticsearch/_msearch')) {
                     // launch body rewrite
                     next();
-                  } else if (req.url.startsWith('/.kibana/config') && req.url.endsWith('_update')) {
+                  } else if (req.url.startsWith('/elasticsearch/.kibana/config') && req.url.endsWith('_update')) {
                     // non admin user is not allowed to modify the .kibana index
                     res.statusCode = 403
                     res.end()
-                  } else if (req.url.startsWith('/.kibana/dashboard/') && req.url.endsWith('op_type=create')) {
+                  } else if (req.url.startsWith('/elasticsearch/.kibana/dashboard/') && req.url.endsWith('op_type=create')) {
                     // Cannot create or update a dashboard
                     res.statusCode = 403
                     res.end()
@@ -145,7 +148,13 @@ module.exports = function(options) {
                 try {
                   allowedTerms = JSON.parse(req.headers[kibanaUserHeader]);
                 } catch (e) {
-                  allowedTerms = req.headers[kibanaUserHeader];
+                  var kibanaUserHeaderValue = req.headers[kibanaUserHeader];
+                  allowedTerms = []
+                  var re = new RegExp(kibanaUserHeaderRegex, 'gmi');
+                  var result = [];
+                  while((result = re.exec(kibanaUserHeaderValue)) != null) {
+                    allowedTerms.push(result[1]);
+                  }
                 }
                 add_term_filter_msearch(q, kibanaUserField, allowedTerms, function(message) {
                   logger.error(message, {
@@ -173,8 +182,14 @@ module.exports = function(options) {
               req.emit('data', newBody)
             });
     var start_proxy = function() {
-      http.createServer(app).listen(port, function(){
-        console.log('proxy listen ' + port);
+      logger.info('kibanaUserHeader: ' + kibanaUserHeader);
+      logger.info('kibanaUserHeaderRegex: ' + kibanaUserHeaderRegex);
+      logger.info('kibanaUserField: ' + kibanaUserField);
+      logger.info('elasticsearchEndpoint: ' + elasticsearchEndpoint);
+      logger.info('listenPort: ' + listenPort);
+      
+      http.createServer(app).listen(listenPort, function(){
+        console.log('proxy listen ' + listenPort);
       });
     }
 
