@@ -52,47 +52,50 @@ module.exports = function(options) {
         },
         add_term_filter_msearch = function(q, term, value, onError) {
           query = q.body.query;
+          logger.debug("Query: " + JSON.stringify(query))
           if (query == undefined) {
             return onError('No "query" field in body');
           }
-          filtered = query.filtered;
-          if (filtered == undefined) {
-            return onError('No "filtered" field in body.query');
-          }
-          filter = filtered.filter;
-          if (filter == undefined) {
-            return onError('No "filter" field in body.query.filtered');
-          }
-          bool_filter = filter.bool;
+          bool_filter = query.bool;
           if (bool_filter == undefined) {
             return onError('No "bool" field in body.query.filtered.bool')
           }
-          if (bool_filter.must == undefined) {
-            bool_filter.must = []
-          } else if (!Type.is(bool_filter.must, Array)) {
-            bool_filter.must = [bool_filter.must]
+          if (bool_filter.should == undefined) {
+            bool_filter.should = []
+          } else if (!Type.is(bool_filter.should, Array)) {
+            bool_filter.should = [bool_filter.should]
           }
-          var newTerm = {}
-          newTerm[term] = value
-          if (value.length > 0) {
-            bool_filter.must.push({
-              'terms': newTerm
-            })
+          for (var i = 0; i < value.length; i++){
+            if (value.length > 0) {
+              var newTerm = {}
+              newTerm[term] = value[i]
+              bool_filter.should.push({
+                'term': newTerm
+              })
+            }
+          }
+          // we need to make sure that at least one "should" parameter does apply
+          // if any value is present
+          if (bool_filter.should.length > 0) {
+            if (bool_filter.minimum_should_match == undefined){
+                bool_filter.minimum_should_match = 1
+            }
           }
         },
         app = connect()
             .use(function(req, res, next) {
               logger.debug(req.method + " " + req.url)
+              //logger.info("Headers: " + JSON.stringify(req.headers) + " with method: " + req.method + " for URL: " + req.url)
               if (kibanaUserHeader in req.headers) {
                 if (req.method == 'POST') {
-                  if (req.url.startsWith('/elasticsearch/_msearch')) {
+                  if (req.url.startsWith('/_msearch')) {
                     // launch body rewrite
                     next();
-                  } else if (req.url.startsWith('/elasticsearch/.kibana/config') && req.url.endsWith('_update')) {
+                  } else if (req.url.startsWith('/.kibana/config') && req.url.endsWith('_update')) {
                     // non admin user is not allowed to modify the .kibana index
                     res.statusCode = 403
                     res.end()
-                  } else if (req.url.startsWith('/elasticsearch/.kibana/dashboard/') && req.url.endsWith('op_type=create')) {
+                  } else if (req.url.startsWith('/.kibana/dashboard/') && req.url.endsWith('op_type=create')) {
                     // Cannot create or update a dashboard
                     res.statusCode = 403
                     res.end()
@@ -175,7 +178,7 @@ module.exports = function(options) {
             // configure proxy pipelines and emit the new body
             .use(function(req, res) {
               proxy.web(req, res, function(e) {
-                logger.error(e)
+                logger.error("Error during new body sending: " + e)
                 res.statusCode = 500
                 res.end();
               })
@@ -187,7 +190,7 @@ module.exports = function(options) {
       logger.info('kibanaUserField: ' + kibanaUserField);
       logger.info('elasticsearchEndpoint: ' + elasticsearchEndpoint);
       logger.info('listenPort: ' + listenPort);
-      
+
       http.createServer(app).listen(listenPort, function(){
         console.log('proxy listen ' + listenPort);
       });
